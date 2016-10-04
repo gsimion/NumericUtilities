@@ -304,11 +304,15 @@ namespace Numeric.Vectors
       {
          List<Column> clonedColumns = m_Columns.Select(x => x).ToList();
          List<List<T>> clonedValues = new List<List<T>>();
-         foreach (var row in Rows)
+         if (includeRows)
          {
-            clonedValues.Add(new List<T>(row));
+            foreach (var row in Rows)
+            {
+               clonedValues.Add(new List<T>(row));
+            }
          }
-         return new CTableMatrix<T>(clonedColumns, clonedValues, ColumnsCount, RowsCount);
+         int newRowCount = includeRows ? RowsCount : 0;
+         return new CTableMatrix<T>(clonedColumns, clonedValues, ColumnsCount, newRowCount);
       }
 
       /// <summary>
