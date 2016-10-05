@@ -281,7 +281,7 @@ namespace Numeric.Vectors
          }
          foreach (List<T> row in Rows)
          {
-            t.Rows.Add(row.ToArray());
+            t.Rows.Add(row.Cast<object>().ToArray());
          }
          return t;
       }

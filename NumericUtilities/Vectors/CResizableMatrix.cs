@@ -156,19 +156,29 @@ namespace Numeric.Vectors
       /// </summary>
       /// <param name="row">The row index.</param>
       /// <returns><c>True</c> if all values are set to their default, <c>false</c> otherwise.</returns>
-      public bool IsDefault(int row)
+      public bool RowIsDefault(int row)
       {
          bool isDefaultNull = (default(T) == null);
+         Func<T, bool> cellCondition = (cellValue=> (cellValue == null && isDefaultNull) || (cellValue != null && cellValue.Equals(default(T))));
+         return RowIs(row, cellCondition); 
+      }
+
+      /// <summary>
+      /// Gets whether the whole list of values in a row fulfil a certain condition.
+      /// </summary>
+      /// <param name="row">The row index.</param>
+      /// <param name="cellCondition">The single cell conditon as a lambda function.</param>
+      /// <returns><c>True</c> if all values fulfill the condition, <c>false</c> otherwise.</returns>
+      public bool RowIs(int row, Func<T, bool> cellCondition)
+      {
+         IReadOnlyList<T> content = m_Matrix[row];
          for (int j = 0; j < ColumnsCount; j++)
          {
-            if (m_Matrix[row][j] == null)
-            {
-               continue;
-            }
-            if ((isDefaultNull && m_Matrix[row][j] != null) || !m_Matrix[row][j].Equals(default(T)))
+            if (!cellCondition(content[j]))
             {
                return false;
             }
+
          }
          return true;
       }

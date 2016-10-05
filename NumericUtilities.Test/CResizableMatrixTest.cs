@@ -47,6 +47,17 @@ namespace Numeric.Test
          Assert.AreEqual(default(int), matrix.Rows[1][1]);
       }
 
+      [TestMethod(), Description("Asserts that the constructor with size returns a matrix with the default values for a value type.")]
+      public void TestResizableMatrix_IdentityConstructor_ValueType()
+      {
+         CResizableMatrix<string> matrix = new CResizableMatrix<string>("id", 2);
+
+         Assert.AreEqual("id", matrix.Rows[0][0]);
+         Assert.AreEqual(default(string), matrix.Rows[0][1]);
+         Assert.AreEqual(default(string), matrix.Rows[1][0]);
+         Assert.AreEqual("id", matrix.Rows[1][1]);
+      }
+
       #endregion
 
       #region "tests: extend i dimension"
@@ -223,11 +234,11 @@ namespace Numeric.Test
          matrix.AddRow(0,0,0,0,0);
          matrix.AddRow(default(int), default(int), default(int), default(int), -1);
 
-         Assert.IsTrue(matrix.IsDefault(0));
-         Assert.IsFalse(matrix.IsDefault(1));
-         Assert.IsTrue(matrix.IsDefault(2));
-         Assert.IsTrue(matrix.IsDefault(3));
-         Assert.IsFalse(matrix.IsDefault(4));
+         Assert.IsTrue(matrix.RowIsDefault(0));
+         Assert.IsFalse(matrix.RowIsDefault(1));
+         Assert.IsTrue(matrix.RowIsDefault(2));
+         Assert.IsTrue(matrix.RowIsDefault(3));
+         Assert.IsFalse(matrix.RowIsDefault(4));
       }
 
       [TestMethod(), Description("Asserts that is default method returns the correct result.")]
@@ -238,10 +249,32 @@ namespace Numeric.Test
          matrix.AddRow();
          matrix.AddRow(default(object), default(object), default(object), default(object), default(object));
 
-         Assert.IsTrue(matrix.IsDefault(0));
-         Assert.IsFalse(matrix.IsDefault(1));
-         Assert.IsTrue(matrix.IsDefault(2));
-         Assert.IsTrue(matrix.IsDefault(3));
+         Assert.IsTrue(matrix.RowIsDefault(0));
+         Assert.IsFalse(matrix.RowIsDefault(1));
+         Assert.IsTrue(matrix.RowIsDefault(2));
+         Assert.IsTrue(matrix.RowIsDefault(3));
+      }
+
+      [TestMethod(), Description("Asserts that row is method returns the correct result.")]
+      public void TestResizableMatrix_RowIs_ReferenceType()
+      {
+         CResizableMatrix<object> matrix = new CResizableMatrix<object>(0, 3);
+         matrix.AddRow(1, 2, 3);
+         matrix.AddRow(null, "", " ");
+
+         Assert.IsTrue(matrix.RowIs(0, content => content.GetType() == typeof(int)));
+         Assert.IsTrue(matrix.RowIs(1, content => content == null || string.IsNullOrWhiteSpace(content as string)));
+      }
+
+      [TestMethod(), Description("Asserts that row is method returns the correct result.")]
+      public void TestResizableMatrix_RowIs_ValueType()
+      {
+         CResizableMatrix<int> matrix = new CResizableMatrix<int>(0, 3);
+         matrix.AddRow(1, 2, 3);
+         matrix.AddRow(-1, -2, -3);
+
+         Assert.IsTrue(matrix.RowIs(0, content => content >= 0));
+         Assert.IsTrue(matrix.RowIs(1, content => content <0));
       }
 
       [TestMethod(), Description("Asserts that same resizable matrices are equal.")]

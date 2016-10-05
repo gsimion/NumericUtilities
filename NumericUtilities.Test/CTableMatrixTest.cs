@@ -308,5 +308,28 @@ namespace Numeric.Test
 
       #endregion
 
+      #region "tests: to data table"
+
+      [TestMethod(), Description("Asserts that getting the table out of a matrix returns the correct table.")]
+      public void TestTableMatrix_ToDataTable_ObjectTable_Values()
+      {
+         DataTable table = new DataTable();
+         table.Columns.Add("1", typeof(object));
+         table.Columns.Add("2", typeof(object));
+         table.Rows.Add(1, "2");
+         table.Rows.Add("3", 4m);
+         CTableMatrix<object> matrix = new CTableMatrix<object>(table);
+
+         DataTable result = matrix.ToDataTable();
+
+         Assert.AreNotSame(table, result);
+         Assert.AreEqual(1, result.Rows[0][0]);
+         Assert.AreEqual("2", result.Rows[0][1]);
+         Assert.AreEqual("3", result.Rows[1][0]);
+         Assert.AreEqual(4m, result.Rows[1][1]);
+      }
+
+      #endregion
+
    }
 }
