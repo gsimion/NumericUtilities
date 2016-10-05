@@ -14,6 +14,7 @@ namespace Numeric.Vectors
    {
       private List<List<T>> m_Matrix;
       private CDefaultRowBuilder m_DefaultBuilder;
+      private Func<T, bool> m_CellDefaultCondition;
 
       /// <summary>
       /// Represents the columns count of the j-dimension.
@@ -24,6 +25,8 @@ namespace Numeric.Vectors
       /// Represents the rows count of the i-dimension.
       /// </summary>
       protected int RowsCount { get; private set; }
+
+      #region "constructors"
 
       /// <summary>
       /// Creates a new instance of 2-dimensional matrix with no data.
@@ -71,11 +74,17 @@ namespace Numeric.Vectors
       /// <param name="rowCount">The rows count.</param>
       private CResizableMatrix(List<List<T>> matrix, int colCount, int rowCount)
       {
+         if (colCount < 0 || rowCount < 0)
+         {
+            throw new ArgumentException("A matrix cannot have negative number or rows or columns.");
+         }
          this.m_DefaultBuilder = new CDefaultRowBuilder() ;
          this.m_Matrix = matrix;
          this.ColumnsCount = colCount;
          this.RowsCount = rowCount;
       }
+
+      #endregion
 
       /// <summary>
       /// Represents the value stored for a given matrix cell.
@@ -158,9 +167,11 @@ namespace Numeric.Vectors
       /// <returns><c>True</c> if all values are set to their default, <c>false</c> otherwise.</returns>
       public bool RowIsDefault(int row)
       {
-         bool isDefaultNull = (default(T) == null);
-         Func<T, bool> cellCondition = (cellValue=> (cellValue == null && isDefaultNull) || (cellValue != null && cellValue.Equals(default(T))));
-         return RowIs(row, cellCondition); 
+         if (m_CellDefaultCondition == null)
+         {
+            m_CellDefaultCondition = (cellValue => (cellValue == null && (default(T) == null)) || (cellValue != null && cellValue.Equals(default(T))));
+         }
+         return RowIs(row, m_CellDefaultCondition); 
       }
 
       /// <summary>
@@ -172,15 +183,8 @@ namespace Numeric.Vectors
       public bool RowIs(int row, Func<T, bool> cellCondition)
       {
          IReadOnlyList<T> content = m_Matrix[row];
-         for (int j = 0; j < ColumnsCount; j++)
-         {
-            if (!cellCondition(content[j]))
-            {
-               return false;
-            }
-
-         }
-         return true;
+         bool result = !content.AsParallel().Any(jContent => !cellCondition(jContent));
+         return result;
       }
 
       /// <summary>
@@ -209,7 +213,7 @@ namespace Numeric.Vectors
       /// </summary>
       protected void ClearAllColumns()
       {
-         m_Matrix.ForEach(x => x.Clear());
+         m_Matrix.AsParallel().ForAll(x => x.Clear());
          ColumnsCount = 0;
       }
 
@@ -257,7 +261,9 @@ namespace Numeric.Vectors
       /// <returns>The equality result, <c>true</c> if satisfied, <c>false</c> otherwise.</returns>
       public virtual bool Equals(CResizableMatrix<T> second)
       {
-         if (second == null || this == null)
+         if ((second == null || this == null) ||
+            (!this.SameSizeOf(second)) ||
+            (this.RowsCount == 0 && this.ColumnsCount == 0))
          {
             return false;
          }
@@ -265,14 +271,7 @@ namespace Numeric.Vectors
          {
             return true;
          }
-         if (!this.SameSizeOf(second))
-         {
-            return false;
-         }
-         if (this.RowsCount == 0 && this.ColumnsCount == 0)
-         {
-            return true;
-         }
+         
          for (int i = 0; i < RowsCount; i++)
          {
             for (int j = 0; j < ColumnsCount; j++)
@@ -351,6 +350,27 @@ namespace Numeric.Vectors
          return (this.RowsCount == second.RowsCount && this.ColumnsCount == second.ColumnsCount);
       }
 
+      /// <summary>
+      /// Get a sub matrix according to the coordinates of <c>i</c>, <c>j</c> cells passed.
+      /// </summary>
+      /// <param name="fromRow">The first element to include <c>i</c> coordinate.</param>
+      /// <param name="fromColumn">The first element to include <c>j</c> coordinate.</param>
+      /// <param name="toRow">The last element to include <c>i</c> coordinate.</param>
+      /// <param name="toColumn">The last element to include <c>j</c> coordinate.</param>
+      /// <returns>The sub matrix according to the coordinates of <c>i</c>, <c>j</c> cells passed.</returns>
+      public CResizableMatrix<T> GetSubMatrix(int fromRow, int fromColumn, int toRow, int toColumn)
+      {
+         CResizableMatrix<T> subMatrix = new CResizableMatrix<T>(toRow - fromRow + 1, toColumn - fromColumn + 1);       
+         for (int i = fromRow; i<=toRow; i++)
+         {
+            for (int j = fromColumn; j <= toColumn; j++)
+            {
+               subMatrix[i-fromRow, j-fromColumn] = this[i, j];
+            }
+         }
+         return subMatrix;
+      }
+
       #endregion
 
       #region "helpers"
@@ -363,6 +383,11 @@ namespace Numeric.Vectors
          private List<T> m_DefaultRow = new List<T>();
          int m_TempColumnsCount = 0;
 
+         /// <summary>
+         /// Gets a list containing <paramref name="columnCount">n</paramref> elements set to the default value of the type <c>T</c>.
+         /// </summary>
+         /// <param name="columnsCount">The n element to generate.</param>
+         /// <returns>The list containing <paramref name="columnCount">n</paramref> elements set to the default value of the type <c>T</c>.</returns>
          public List<T> GetRow(int columnsCount)
          {
             if (columnsCount == 0)

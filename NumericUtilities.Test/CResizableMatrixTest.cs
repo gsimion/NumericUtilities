@@ -29,6 +29,20 @@ namespace Numeric.Test
          Assert.AreEqual(1, matrix.Rows[1].Count);
       }
 
+      [TestMethod(), Description("Asserts that the constructor with size throws an exception for a negative number of rows.")]
+      [ExpectedException(typeof(ArgumentException), "A matrix cannot have negative number or rows or columns.")]
+      public void TestResizableMatrix_SizeConstructor_NegativeRows_ArgumentException()
+      {
+         var matrix = new CResizableMatrix<string>(-1, 1);
+      }
+
+      [TestMethod(), Description("Asserts that the constructor with size throws an exception for a negative number of columns.")]
+      [ExpectedException(typeof(ArgumentException), "A matrix cannot have negative number or rows or columns.")]
+      public void TestResizableMatrix_SizeConstructor_NegativeColumns_ArgumentException()
+      {
+         var matrix = new CResizableMatrix<string>(1, -1);
+      }
+
       [TestMethod(), Description("Asserts that the constructor with size returns a matrix with the default values for a reference type.")]
       public void TestResizableMatrix_SizeConstructor_DefaultValue_ReferenceType()
       {
@@ -453,6 +467,34 @@ namespace Numeric.Test
          Assert.AreEqual("something", matrix.Rows[0][1]);
          Assert.AreEqual("else", matrix.Rows[1][1]);
          Assert.AreEqual(null, matrix.Rows[2][1]);
+      }
+
+      [TestMethod(), Description("Asserts that it is possible to get a sub matrix with correct properties.")]
+      public void TestResizableMatrix_GetSubMatrix_Properties()
+      {
+         CResizableMatrix<object> matrix = new CResizableMatrix<object>(0, 3);
+         matrix.AddRow(1, null);
+         matrix.AddRow("something", "else");
+         matrix.AddRow(2, 3);
+
+         CResizableMatrix<object> subMatrix = matrix.GetSubMatrix(1, 1, 2, 2);
+         Assert.AreEqual(2, subMatrix.Rows.Count);
+         Assert.AreEqual(2, subMatrix.Rows[0].Count);
+      }
+
+      [TestMethod(), Description("Asserts that it is possible to get a sub matrix with correct values.")]
+      public void TestResizableMatrix_GetSubMatrix_Values()
+      {
+         CResizableMatrix<object> matrix = new CResizableMatrix<object>(0, 3);
+         matrix.AddRow(1, null);
+         matrix.AddRow("something", "else");
+         matrix.AddRow(2, 3);
+
+         CResizableMatrix<object> subMatrix = matrix.GetSubMatrix(1, 1, 2, 2);
+         Assert.AreEqual("else", subMatrix[0, 0]);
+         Assert.AreEqual(null, subMatrix[0, 1]);
+         Assert.AreEqual(3, subMatrix[1, 0]);
+         Assert.AreEqual(null, subMatrix[1, 1]);
       }
 
       #endregion
