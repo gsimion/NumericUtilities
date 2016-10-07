@@ -75,13 +75,13 @@ namespace Numeric.Vectors
          this.m_ColumnIndexes = new Dictionary<int, Dictionary<int, int>>();
          if (matrix == null)
             return;
-         for (int i = 0; i < rowCount;i++ )
+         for (int i = 0; i < RowsCount; i++)
          {
             var value_i = matrix[i];
-            for (int j = 0; j < rowCount; j++)
+            for (int j = 0; j < ColumnsCount; j++)
             {
                this[i, j] = value_i[j];
-            }         
+            }
          }       
       }
 
