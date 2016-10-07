@@ -40,6 +40,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Extensions\CMap.cs" />
     <Compile Include="Extensions\CNumericTypeExtension.cs" />
     <Compile Include="Vectors\CTableMatrix.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

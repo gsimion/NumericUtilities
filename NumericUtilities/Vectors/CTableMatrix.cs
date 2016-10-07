@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Data;
+using Numeric.Extensions;
 
 namespace Numeric.Vectors
 {
@@ -16,7 +17,9 @@ namespace Numeric.Vectors
       /// </summary>
       public const int NullHashing = int.MinValue;
 
-      private readonly List<Column> m_Columns;
+      private CMap<int, string> m_Columns;
+
+      private List<Column> m_MaterializedView;
 
       /// <summary>
       /// Hash non-unique indexes per column, as a dictionary of column index, maps [row index, value].
@@ -32,50 +35,43 @@ namespace Numeric.Vectors
          /// <summary>
          /// Creates a new column within the current instance of 2-dimensional matrix.
          /// </summary>
-         /// <param name="iOrdinal"></param>
-         /// <param name="sName"></param>
+         /// <param name="ordinal"></param>
+         /// <param name="name"></param>
          /// <remarks></remarks>
-         internal Column(int iOrdinal, string sName)
+         internal Column(int ordinal, string name)
          {
-            m_Info = new KeyValuePair<int, string>(iOrdinal, sName);
+            m_Info = new KeyValuePair<int, string>(ordinal, name);
          }
 
          /// <summary>
          /// Represents the name of the column.
          /// </summary>
-         public string Name
-         {
-            get { return m_Info.Value; }
-         }
+         public string Name { get { return m_Info.Value; } }
 
          /// <summary>
          /// Represents the ordinal of the column.
          /// </summary>
-         public int Ordinal
-         {
-            get { return m_Info.Key; }
-         }
+         public int Ordinal { get { return m_Info.Key; } }
       }
 
       /// <summary>
       /// Creates a new instance of 2-dimensional matrix with no structure or data.
       /// </summary>
       public CTableMatrix()
-         : this(new List<Column>(), null, 0, 0)
+         : this(null, 0, 0)
       {
       }
 
       /// <summary>
       /// Internal constructor creating a new instance of 2-dimensional matrix.
       /// </summary>
-      /// <param name="columns">The collection containing the columns.</param>
       /// <param name="matrix">The matrix itself.</param>
       /// <param name="colCount">The columns count.</param>
       /// <param name="rowCount">The rows count.</param>
-      private CTableMatrix(List<Column> columns, List<List<T>> matrix, int colCount, int rowCount)
+      private CTableMatrix(List<List<T>> matrix, int colCount, int rowCount)
          : base(rowCount, colCount)
       {
-         this.m_Columns = columns;
+         this.m_Columns = new CMap<int, string>();
          this.m_ColumnIndexes = new Dictionary<int, Dictionary<int, int>>();
          if (matrix == null)
             return;
@@ -94,9 +90,12 @@ namespace Numeric.Vectors
       /// </summary>
       /// <param name="table">The datatable to create the instance from.</param>
       public CTableMatrix(DataTable table)
-         : this(null, null, table.Columns.Count, table.Rows.Count)
+         : this(null, table.Columns.Count, table.Rows.Count)
       {
-         this.m_Columns = new List<Column>(table.Columns.Cast<DataColumn>().Select(x=>new Column(x.Ordinal, x.ColumnName)));
+         foreach (DataColumn column in table.Columns)
+         {
+            m_Columns.Add(column.Ordinal, column.ColumnName);
+         }
          for (int i = 0; i < RowsCount; i++)
          {
             var value_i = table.Rows[i];
@@ -123,7 +122,14 @@ namespace Numeric.Vectors
       /// </summary>
       public ICollection<Column> Columns
       {
-         get { return m_Columns; }
+         get 
+         {
+            if (m_MaterializedView == null || m_MaterializedView.Count != m_Columns.Count)
+            {
+               m_MaterializedView = m_Columns.Values.Select(x => new Column(x.Item1, x.Item2)).ToList();
+            }
+            return m_MaterializedView;
+         }
       }
 
       /// <summary>
@@ -141,7 +147,7 @@ namespace Numeric.Vectors
       /// <param name="column">The column index to add the index to.</param>
       public void AddHashIndex(int column)
       {
-         if (!m_Columns.Any(x => x.Ordinal == column))
+         if (!m_Columns.Forward.Contains(column))
          {
             throw new ArgumentException("There is no column defined for the passed index.");
          }
@@ -188,11 +194,11 @@ namespace Numeric.Vectors
       public int AddColumn(string name)
       {
          int newColumnIndex = ExtendColumns();
-         if ((m_Columns.Any(x => x.Name.Equals(name))))
+         if ((m_Columns.Reverse.Contains(name)))
          {
             throw new ArgumentException("Column name is already defined for this context.");
          }
-         m_Columns.Add(new Column(newColumnIndex, name));
+         m_Columns.Add(newColumnIndex, name);
          return newColumnIndex;
       }
 
@@ -257,14 +263,13 @@ namespace Numeric.Vectors
       /// <returns>Index as a positive integer if found, <c>-1</c> otherwise.</returns>
       public int IndexOf(string column)
       {
-         Column col = m_Columns.SingleOrDefault(x => x.Name.Equals(column));
-         if (col.Equals(new Column()))
+         if (!m_Columns.Reverse.Contains(column))
          {
             return -1;
          }
          else
          {
-            return col.Ordinal;
+            return m_Columns.Reverse[column];
          }
       }
 
@@ -275,9 +280,9 @@ namespace Numeric.Vectors
       public DataTable ToDataTable()
       {
          DataTable t = new DataTable();
-         foreach (Column col in m_Columns)
+         foreach (var col in m_Columns.Values.OrderBy(x => x.Item1))
          {
-            t.Columns.Add(col.Name, typeof(T));
+            t.Columns.Add(col.Item2, typeof(T));
          }
          foreach (List<T> row in Rows)
          {
@@ -302,7 +307,11 @@ namespace Numeric.Vectors
       /// <returns>New instance of the current 2-dimensional matrix.</returns>
       public CTableMatrix<T> Clone(bool includeRows)
       {
-         List<Column> clonedColumns = m_Columns.Select(x => x).ToList();
+         CMap<int, string> clonedColumns = new CMap<int, string>();
+         foreach(var map in m_Columns.Values)
+         {
+            clonedColumns.Add(map.Item1, map.Item2);
+         }
          List<List<T>> clonedValues = new List<List<T>>();
          if (includeRows)
          {
@@ -312,7 +321,9 @@ namespace Numeric.Vectors
             }
          }
          int newRowCount = includeRows ? RowsCount : 0;
-         return new CTableMatrix<T>(clonedColumns, clonedValues, ColumnsCount, newRowCount);
+         CTableMatrix<T> clone = new CTableMatrix<T>(clonedValues, ColumnsCount, newRowCount);
+         clone.m_Columns = clonedColumns;
+         return clone;
       }
 
       /// <summary>
@@ -329,7 +340,7 @@ namespace Numeric.Vectors
       /// <param name="second">The instance of 2-dimensional matrix to merge to the current.</param>
       public void Merge(CTableMatrix<T> second)
       {
-         if (!m_Columns.SequenceEqual(second.m_Columns))
+         if (!m_Columns.Values.SequenceEqual(second.m_Columns.Values))
          {
             throw new InvalidOperationException("Cannot merge different structures.");
          }
