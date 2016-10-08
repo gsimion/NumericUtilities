@@ -29,9 +29,8 @@ namespace Numeric.Vectors
       /// <summary>
       /// Structure representing a column of the 2-dimensional matrix.
       /// </summary>
-      public struct Column
+      public class Column : Tuple<int, string>
       {
-         private readonly KeyValuePair<int, string> m_Info;
          /// <summary>
          /// Creates a new column within the current instance of 2-dimensional matrix.
          /// </summary>
@@ -39,19 +38,18 @@ namespace Numeric.Vectors
          /// <param name="name"></param>
          /// <remarks></remarks>
          internal Column(int ordinal, string name)
-         {
-            m_Info = new KeyValuePair<int, string>(ordinal, name);
-         }
+            : base(ordinal, name)
+         { }
 
          /// <summary>
          /// Represents the name of the column.
          /// </summary>
-         public string Name { get { return m_Info.Value; } }
+         public string Name { get { return Item2; } }
 
          /// <summary>
          /// Represents the ordinal of the column.
          /// </summary>
-         public int Ordinal { get { return m_Info.Key; } }
+         public int Ordinal { get { return Item1; } }
       }
 
       /// <summary>
@@ -147,9 +145,9 @@ namespace Numeric.Vectors
       /// <param name="column">The column index to add the index to.</param>
       public void AddHashIndex(int column)
       {
-         if (!m_Columns.Forward.Contains(column))
+         if (!m_Columns.Forward.ContainsKey(column))
          {
-            throw new ArgumentException("There is no column defined for the passed index.");
+            throw new ArgumentException("There is no column defined for the passed index.", Utilities.CUtility.GetParameters(System.Reflection.MethodInfo.GetCurrentMethod(), 1));
          }
          m_ColumnIndexes[column] = new Dictionary<int, int>();
          for (int i = 0; i < RowsCount; i++)
@@ -169,7 +167,7 @@ namespace Numeric.Vectors
          Dictionary<int, int> currentHashingDictionary = null;
          if (!m_ColumnIndexes.TryGetValue(column, out currentHashingDictionary))
          {
-            throw new ArgumentException("There is no index defined for the column passed.");
+            throw new ArgumentException("There is no index defined for the column passed.", Utilities.CUtility.GetParameters(System.Reflection.MethodInfo.GetCurrentMethod(), 1));
          }
          return currentHashingDictionary[row];
       }
@@ -194,9 +192,9 @@ namespace Numeric.Vectors
       public int AddColumn(string name)
       {
          int newColumnIndex = ExtendColumns();
-         if ((m_Columns.Reverse.Contains(name)))
+         if ((m_Columns.Reverse.ContainsKey(name)))
          {
-            throw new ArgumentException("Column name is already defined for this context.");
+            throw new ArgumentException("Column name is already defined for this context.", Utilities.CUtility.GetParameters(System.Reflection.MethodInfo.GetCurrentMethod(), 1));
          }
          m_Columns.Add(newColumnIndex, name);
          return newColumnIndex;
@@ -263,14 +261,12 @@ namespace Numeric.Vectors
       /// <returns>Index as a positive integer if found, <c>-1</c> otherwise.</returns>
       public int IndexOf(string column)
       {
-         if (!m_Columns.Reverse.Contains(column))
+         int index;
+         if (!m_Columns.Reverse.TryGetValue(column, out index))
          {
             return -1;
          }
-         else
-         {
-            return m_Columns.Reverse[column];
-         }
+         return index;
       }
 
       /// <summary>

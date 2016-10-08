@@ -53,12 +53,15 @@ namespace Numeric.Test
          Table.Columns.Add("2", typeof(string));
          Table.Rows.Add("a", "b");
          Table.Rows.Add("c", "d");
+         Table.Rows.Add("e", "f");
          CTableMatrix<object> Matrix = new CTableMatrix<object>(Table);
 
          Assert.AreEqual("a", Matrix[0, 0]);
          Assert.AreEqual("b", Matrix[0, 1]);
          Assert.AreEqual("c", Matrix[1, 0]);
          Assert.AreEqual("d", Matrix[1, 1]);
+         Assert.AreEqual("e", Matrix[2, 0]);
+         Assert.AreEqual("f", Matrix[2, 1]);
       }
 
       [TestMethod(), Description("Asserts that the default constructor returns the correct values.")]

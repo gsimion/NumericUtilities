@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Numeric.Vectors;
+using System.Collections.Generic;
 
 namespace Numeric.Test
 {
@@ -498,5 +499,57 @@ namespace Numeric.Test
       }
 
       #endregion
+
+      #region "serializable support"
+
+      [Serializable]
+      public class CTestSerializableThing
+      {
+         public int a;
+         public object b;
+         public string c;
+
+         public CTestSerializableThing()
+         { }
+
+         public CTestSerializableThing(params object[] args)
+         {
+            a = (int)args[0];
+            b = args[1];
+            c = (string)args[2];
+         }
+      }
+
+      [TestMethod(), Description("Asserts that it is possible to get list of serializable objects.")]
+      public void TestResizableMatrix_ToList_SerializedObjects_Count()
+      {
+         CResizableMatrix<object> matrix = new CResizableMatrix<object>(0, 3);
+         matrix.AddRow(1, null, "1");
+         matrix.AddRow(2, null, "2");
+
+         List<CTestSerializableThing> resultingList = matrix.ToList<CTestSerializableThing>(0, 1, 2);
+
+         Assert.IsNotNull(resultingList);
+         Assert.AreEqual(matrix.Rows.Count, resultingList.Count);
+      }
+
+      [TestMethod(), Description("Asserts that it is possible to get list of serializable objects with the correct values.")]
+      public void TestResizableMatrix_ToList_SerializedObjects_Values()
+      {
+         CResizableMatrix<object> matrix = new CResizableMatrix<object>(0, 3);
+         matrix.AddRow(1, null, "1");
+         matrix.AddRow(2, null, "2");
+
+         List<CTestSerializableThing> resultingList = matrix.ToList<CTestSerializableThing>(0, 1, 2);
+
+         Assert.AreEqual(1, resultingList[0].a);
+         Assert.AreEqual(null, resultingList[0].b);
+         Assert.AreEqual("1", resultingList[0].c);
+         Assert.AreEqual(2, resultingList[1].a);
+         Assert.AreEqual(null, resultingList[1].b);
+         Assert.AreEqual("2", resultingList[1].c);
+      }
+
+      #endregion 
    }
 }

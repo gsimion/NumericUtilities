@@ -42,6 +42,7 @@
   <ItemGroup>
     <Compile Include="Extensions\CMap.cs" />
     <Compile Include="Extensions\CNumericTypeExtension.cs" />
+    <Compile Include="Utilities\CUtility.cs" />
     <Compile Include="Vectors\CTableMatrix.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Vectors\CResizableMatrix.cs" />

@@ -76,7 +76,7 @@ namespace Numeric.Vectors
       {
          if (colCount < 0 || rowCount < 0)
          {
-            throw new ArgumentException("A matrix cannot have negative number or rows or columns.");
+            throw new ArgumentException("A matrix cannot have negative number or rows or columns.", Utilities.CUtility.GetParameters(System.Reflection.MethodInfo.GetCurrentMethod(), 3));
          }
          this.m_DefaultBuilder = new CDefaultRowBuilder() ;
          this.m_Matrix = matrix;
@@ -384,10 +384,10 @@ namespace Numeric.Vectors
          int m_TempColumnsCount = 0;
 
          /// <summary>
-         /// Gets a list containing <paramref name="columnCount">n</paramref> elements set to the default value of the type <c>T</c>.
+         /// Gets a list containing <paramref name="columnsCount">n</paramref> elements set to the default value of the type <c>T</c>.
          /// </summary>
          /// <param name="columnsCount">The n element to generate.</param>
-         /// <returns>The list containing <paramref name="columnCount">n</paramref> elements set to the default value of the type <c>T</c>.</returns>
+         /// <returns>The list containing <paramref name="columnsCount">n</paramref> elements set to the default value of the type <c>T</c>.</returns>
          public List<T> GetRow(int columnsCount)
          {
             if (columnsCount == 0)
@@ -404,6 +404,46 @@ namespace Numeric.Vectors
             }
            m_TempColumnsCount= columnsCount;
            return new List<T>(m_DefaultRow);
+         }
+      }
+
+      #endregion
+
+      #region "serialization"
+
+      /// <summary>
+      /// Gets a list containing instances of serializable object of the passed type.
+      /// </summary>
+      /// <typeparam name="T1">The serializable type to populate the list. 
+      /// Must have a method definition passing a generic array of objects.</typeparam>
+      /// <param name="selectionArgs">The matrix column indexes in the right order to inject into the constructor invokation.</param>
+      /// <returns>The list containing instances of serializable object of the passed type.</returns>
+      public List<T1> ToList<T1>(params int[] selectionArgs) where T1 : new()
+      {    
+         try
+         {
+            if (!typeof(T1).IsSerializable && 
+               !(typeof(System.Runtime.Serialization.ISerializable).IsAssignableFrom(typeof(T))))
+               throw new InvalidOperationException("A serializable type is required.");
+            List<T1> result = new List<T1>();
+            System.Reflection.ConstructorInfo invokedCtor = typeof(T1).GetConstructor(new[] { typeof(T[]) });
+
+            for (int i = 0; i < RowsCount; i++)
+            {
+               List<object> constructorInput = new List<object>();
+               foreach (int j in selectionArgs)
+               {
+                  constructorInput.Add(this[i, j]);
+               }
+               var instance = invokedCtor.Invoke(new object[] { constructorInput.ToArray() });
+               result.Add((T1)instance);
+            }
+
+            return result;
+         }
+         catch (Exception ex)
+         {
+            throw new InvalidOperationException("Failed in creating the object instance by reflection.", ex);
          }
       }
 
