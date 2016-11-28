@@ -42,6 +42,10 @@
   <ItemGroup>
     <Compile Include="Extensions\CMap.cs" />
     <Compile Include="Extensions\CNumericTypeExtension.cs" />
+    <Compile Include="Range\CDateRange.cs" />
+    <Compile Include="Range\CRange.cs" />
+    <Compile Include="Range\CRangeLine.cs" />
+    <Compile Include="Range\IRange.cs" />
     <Compile Include="Utilities\CUtility.cs" />
     <Compile Include="Vectors\CTableMatrix.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
