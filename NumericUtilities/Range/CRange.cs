@@ -176,7 +176,7 @@ namespace Numeric.Range
       /// <returns>1-dimensional segment representation as (a, b)</returns>
       public override string ToString()
       {
-         return this.ToString("[a, b)");
+         return this.ToString("(a, b)");
       }
 
       /// <summary>
