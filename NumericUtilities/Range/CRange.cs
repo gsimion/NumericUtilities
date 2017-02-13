@@ -1,4 +1,5 @@
 ﻿using System;
+using Numeric.Utilities;
 
 namespace Numeric.Range
 {
@@ -136,13 +137,7 @@ namespace Numeric.Range
       /// </summary>
       public override int GetHashCode()
       {
-         unchecked
-         {
-            int hash = 31;
-            hash = (hash * 23) + m_Start.GetHashCode();
-            hash = (hash * 23) + m_End.GetHashCode();
-            return hash;
-         }
+         return CUtility.GenerateHashCode(m_Start, m_End);
       }
 
       /// <summary>
